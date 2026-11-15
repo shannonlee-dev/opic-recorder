@@ -116,6 +116,18 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install-shortcut.ps1 -
 업데이트할 때 실행 중인 앱을 먼저 닫고 `build.bat`를 다시 실행하세요.
 다른 CPU 아키텍처가 필요하면 해당 Windows/Python 환경에서 다시 빌드해야 합니다.
 
+### 녹음 보관 폴더 아이콘
+
+`OPIc_Recordings` 폴더에는 검은 유리 타일과 청록·보라 음성 파형 아이콘을 적용할 수 있습니다.
+폴더가 만들어진 뒤 아래 명령을 실행합니다. 다른 저장 위치에는 `-FolderPath 'D:\녹음'`을 추가하세요.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install-recordings-icon.ps1
+```
+
+아이콘과 `desktop.ini`는 해당 폴더 안에 숨김 파일로 보관됩니다. 기존 녹음 파일은 변경하지 않습니다.
+원본 이미지는 `assets/opic-recordings.png`, Windows 아이콘은 `assets/opic-recordings.ico`입니다.
+
 ## 파일 및 설정 관리
 
 ```text
