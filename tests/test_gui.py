@@ -97,6 +97,108 @@ class GuiTests(unittest.TestCase):
         self.assertTrue(self.app.play_button.instate(["!disabled"]))
         self.assertFalse(self.errors)
 
+    def test_keyboard_record_save_and_repeated_start(self):
+        self.root.deiconify()
+        self.root.update()
+        self.root.focus_force()
+        self.root.event_generate("<Control-KeyPress-r>")
+        self.wait_for(lambda: self.app.state == "recording")
+        worker = self.app.recorder.thread
+        self.root.event_generate("<Control-KeyPress-r>")
+        self.root.update()
+        self.assertIs(self.app.recorder.thread, worker)
+        self.root.event_generate("<Control-KeyPress-s>")
+        self.wait_for(lambda: self.app.state == "idle")
+        self.assertTrue(self.app.last_file.exists())
+        self.assertFalse(self.errors)
+
+    def test_shortcuts_respect_disabled_controls_and_modal_dialogs(self):
+        import tkinter as tk
+
+        self.root.deiconify()
+        self.root.update()
+        self.root.focus_force()
+        with patch("winsound.PlaySound") as playback:
+            self.root.event_generate("<Control-KeyPress-p>")
+            self.root.update()
+            playback.assert_not_called()
+        self.app.start()
+        self.wait_for(lambda: self.app.state == "recording")
+        with patch.object(self.app, "refresh_devices") as refresh:
+            self.app.refresh_button.configure(command=refresh)
+            self.root.event_generate("<F5>")
+            self.root.update()
+            refresh.assert_not_called()
+        dialog = tk.Toplevel(self.root)
+        dialog.grab_set()
+        try:
+            self.root.event_generate("<Control-KeyPress-s>")
+            self.root.update()
+            self.assertEqual(self.app.state, "recording")
+        finally:
+            dialog.grab_release()
+            dialog.destroy()
+        self.app.stop()
+        self.wait_for(lambda: self.app.state == "idle")
+
+    def test_keyboard_help_and_playback_stop(self):
+        self.root.deiconify()
+        self.root.update()
+        self.root.focus_force()
+        with patch("tkinter.messagebox.showinfo") as help_dialog:
+            self.root.event_generate("<F1>")
+            self.root.update()
+            help_dialog.assert_called_once()
+            self.assertIn("Ctrl+R", help_dialog.call_args.args[1])
+        with patch("winsound.PlaySound") as playback:
+            self.root.event_generate("<Escape>")
+            self.root.update()
+            playback.assert_called_once_with(None, 0)
+
+    def test_folder_refresh_playback_and_text_entry_keys(self):
+        import tkinter as tk
+
+        self.root.deiconify()
+        self.root.update()
+        self.root.focus_force()
+        for key, button in (
+            ("<Control-KeyPress-o>", self.app.open_folder_button),
+            ("<F5>", self.app.refresh_button),
+            ("<Control-KeyPress-p>", self.app.play_button),
+        ):
+            with patch.object(self.app, "open_folder") as action:
+                button.configure(command=action, state="normal")
+                self.root.event_generate(key)
+                self.root.update()
+                action.assert_called_once_with()
+        entry = tk.Entry(self.root)
+        entry.pack()
+        # The app fixes its initial geometry; make room for this extra test input.
+        self.root.geometry(
+            f"{self.root.winfo_width()}x{self.root.winfo_height() + entry.winfo_reqheight()}"
+        )
+        self.root.update()
+        entry.focus_force()
+        self.root.update()
+        self.assertTrue(entry.winfo_ismapped())
+        self.assertIs(self.root.focus_get(), entry)
+        for key in ("r", "space", "s"):
+            entry.event_generate(f"<KeyPress-{key}>", state=0)
+        self.root.update()
+        self.assertEqual(entry.get(), "r s")
+        self.assertEqual(self.app.state, "idle")
+        self.assertIsNone(self.app.recorder.thread)
+
+    def test_korean_ime_virtual_key_and_altgr_guard(self):
+        from types import SimpleNamespace
+
+        with patch.object(self.app, "start") as start:
+            self.app.start_button.configure(command=start)
+            self.app.on_control_shortcut(SimpleNamespace(keycode=82, keysym="Hangul", state=4))
+            start.assert_called_once_with()
+            self.app.on_control_shortcut(SimpleNamespace(keycode=82, keysym="r", state=0x20004))
+            start.assert_called_once_with()
+
     def test_cancel_close_keeps_recording_and_save_close_preserves_file(self):
         self.app.start()
         self.wait_for(lambda: self.app.state == "recording")

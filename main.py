@@ -500,7 +500,7 @@ class RecorderApp:
         line.grid(row=2, column=0, sticky="ew")
         line.columnconfigure(0, weight=1)
         ttk.Label(line, text="사용할 마이크").grid(row=0, column=0, sticky="w")
-        self.refresh_button = ttk.Button(line, text="새로 고침", command=self.refresh_devices)
+        self.refresh_button = ttk.Button(line, text="새로 고침 (F5)", command=self.refresh_devices)
         self.refresh_button.grid(row=0, column=1, rowspan=2, padx=(8, 0))
         self.mic = ttk.Combobox(line, state="readonly", width=28)
         self.mic.grid(row=1, column=0, sticky="ew", pady=(4, 0))
@@ -515,11 +515,11 @@ class RecorderApp:
         self.rec_text = tk.StringVar(value="")
         ttk.Label(clock_line, textvariable=self.rec_text, style="Rec.TLabel").pack(side="right")
         self.start_button = ttk.Button(
-            panel, text="녹음 시작", style="Start.TButton", command=self.start
+            panel, text="녹음 시작 (Ctrl+R)", style="Start.TButton", command=self.start
         )
         self.start_button.grid(row=5, column=0, sticky="nsew")
         self.stop_button = ttk.Button(
-            panel, text="녹음 종료 및 저장", command=self.stop, state="disabled"
+            panel, text="녹음 종료 및 저장 (Ctrl+S)", command=self.stop, state="disabled"
         )
         self.stop_button.grid(row=6, column=0, sticky="ew", pady=(6, 0))
         self.status = tk.StringVar(value="대기")
@@ -538,14 +538,29 @@ class RecorderApp:
         for column in range(3):
             controls.columnconfigure(column, weight=1)
         self.play_button = ttk.Button(
-            controls, text="최근 파일 재생", command=self.play, state="disabled"
+            controls, text="최근 파일 재생 (Ctrl+P)", command=self.play, state="disabled"
         )
         self.play_button.grid(row=0, column=0, sticky="ew")
-        ttk.Button(controls, text="저장 폴더 열기", command=self.open_folder).grid(
-            row=0, column=1, sticky="ew", padx=4
+        self.open_folder_button = ttk.Button(
+            controls, text="저장 폴더 열기 (Ctrl+O)", command=self.open_folder
         )
+        self.open_folder_button.grid(row=0, column=1, sticky="ew", padx=4)
         self.folder_button = ttk.Button(controls, text="위치 변경", command=self.change_folder)
         self.folder_button.grid(row=0, column=2, sticky="ew")
+        ttk.Button(panel, text="단축키 안내 (F1)", command=self.show_shortcuts).grid(
+            row=12, column=0, sticky="e", pady=(8, 0)
+        )
+        self.shortcut_buttons = {
+            "r": self.start_button,
+            "s": self.stop_button,
+            "p": self.play_button,
+            "o": self.open_folder_button,
+            "F5": self.refresh_button,
+        }
+        # Windows virtual-key codes keep Ctrl shortcuts working with Korean IME.
+        root.bind("<Control-KeyPress>", self.on_control_shortcut)
+        for key in ("F5", "F1", "Escape"):
+            root.bind(f"<{key}>", lambda event, action=key: self.run_shortcut(action))
         self.file_label.bind(
             "<Configure>", lambda event: self.file_label.configure(wraplength=max(200, event.width))
         )
@@ -559,6 +574,47 @@ class RecorderApp:
         self.poll_id = root.after(50, self.poll)
         if warning:
             root.after(100, lambda: self.show_warning("설정 안내", warning))
+
+    def on_control_shortcut(self, event):
+        if event.state & 0x20008:  # Do not capture AltGr / Ctrl+Alt combinations.
+            return None
+        key = {82: "r", 83: "s", 80: "p", 79: "o"}.get(event.keycode, event.keysym.lower())
+        return self.run_shortcut(key)
+
+    def run_shortcut(self, action):
+        # Dialogs own their keyboard input; never record/stop behind a modal prompt.
+        if self.root.grab_current() is not None:
+            return None
+        if action in self.shortcut_buttons:
+            button = self.shortcut_buttons[action]
+            if not button.instate(["disabled"]):
+                button.invoke()
+        elif action == "F1":
+            self.show_shortcuts()
+        elif action == "Escape":
+            self.stop_playback()
+        else:
+            return None
+        return "break"
+
+    def show_shortcuts(self):
+        from tkinter import messagebox
+
+        messagebox.showinfo(
+            "단축키 안내",
+            "Ctrl+R  녹음 시작\n"
+            "Ctrl+S  녹음 종료 및 저장\n"
+            "Ctrl+P  최근 파일 재생\n"
+            "Esc  재생 중지 (녹음은 계속)\n"
+            "Ctrl+O  저장 폴더 열기\n"
+            "F5  마이크 새로 고침\n"
+            "F1  단축키 안내\n\n"
+            "Tab / Shift+Tab  다음 / 이전 항목\n"
+            "Space  선택한 버튼 실행\n\n"
+            "앱 창이 활성화되어 있을 때 사용할 수 있습니다.\n"
+            "사용할 수 없는 버튼의 단축키는 동작하지 않습니다.",
+            parent=self.root,
+        )
 
     def show_warning(self, title, message):
         from tkinter import messagebox
