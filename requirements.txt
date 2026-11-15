@@ -1,0 +1,2 @@
+sounddevice==0.5.3
+pyinstaller==6.16.0
