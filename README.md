@@ -25,14 +25,20 @@ Windows 10/11에서 영어 말하기 연습을 WAV로 녹음하는 한국어 데
 
 | 구성 요소 | 역할 |
 |---|---|
-| `main.py` / `RecorderApp` | 전체 실행 코드 및 Tk GUI. 작업 결과를 큐에서 받아 화면 갱신 |
-| `main.py` / `Recorder` | 작업 스레드에서 장치 열기, 레이트 협상, 종료, 버퍼 저장 수행 |
-| 오디오 콜백 / bounded queue | PCM 바이트 복사 후 큐 전달. GUI 또는 디스크에 직접 접근하지 않음 |
-| `main.py` / `WaveSink` | 디스크에 순차 기록, 주기적인 WAV 헤더 갱신, 종료 시 헤더·버퍼 마무리 |
-| Windows Known Folder API | 리디렉션된 바탕화면 및 사용자별 설정 경로 조회 |
-| `build.bat` | Windows 가상환경 생성, 의존성 설치, 테스트, PyInstaller EXE 빌드 |
-| `install-shortcut.ps1` | Windows 로컬 앱 폴더에 EXE 복사 및 실제 바탕화면에 `.lnk` 생성 |
-| `tests/` | 실제 파일 I/O·WAV 검증 및 Windows Tk 동작 테스트 |
+| `opic_recorder/app.py` | Windows 초기화, Tk와 오디오 백엔드 조립 |
+| `opic_recorder/ui/` | 화면 배치(`view.py`)와 사용자 입력·상태 제어(`app.py`) |
+| `opic_recorder/recording.py` | 녹음 작업 스레드, 오디오 큐, 시작·종료 이벤트 |
+| `opic_recorder/wav.py` | 파일명 충돌 방지, PCM 기록, WAV 헤더와 파일 마무리 |
+| `opic_recorder/devices.py` | 마이크 목록과 기본 장치 선택 |
+| `opic_recorder/settings.py` | 저장 위치 설정 읽기·원자적 저장 |
+| `opic_recorder/windows.py` | Windows 폴더, 마이크 권한, 재생, 탐색기, DPI |
+| `main.py` | 실행 진입점과 기존 import 호환 |
+| `build.bat`, `scripts/` | EXE 빌드, 아이콘 생성, 배포 패키지 검증 |
+| `tests/` | WAV·파일 I/O, Windows Tk 동작, 모듈 의존 경계 테스트 |
+
+핵심 원칙은 **UI가 녹음 엔진에 의존하고, 녹음 엔진은 UI를 모르게 하는 것**입니다.
+디렉터리 구조, 의존 방향, 스레드·파일 소유권 및 다른 앱에서의 사용 방법은
+[아키텍처 문서](docs/architecture.md)에 정리했습니다.
 
 ```mermaid
 flowchart LR
@@ -188,7 +194,7 @@ WSL에서 하드웨어 없는 핵심 테스트:
 ```bash
 cd /home/shannon/__dev/opic-voice-recorder
 python3 -m unittest discover -s tests -v
-python3 -m compileall -q main.py tests
+python3 -m compileall -q main.py opic_recorder tests
 ```
 
 Windows에서 GUI 테스트까지 실행:

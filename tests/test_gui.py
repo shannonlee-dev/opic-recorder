@@ -11,7 +11,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from test_recorder import FakeAudio
 
-import main
+from opic_recorder.ui import app as ui_app
 
 
 @unittest.skipUnless(sys.platform == "win32", "Windows Tk / winsound required")
@@ -27,9 +27,9 @@ class GuiTests(unittest.TestCase):
         self.addCleanup(self.destroy)
         self.errors = []
         self.patches = [
-            patch.object(main, "microphone_access_issue", return_value=None, create=True),
-            patch.object(main, "settings_file", return_value=folder / "settings.json"),
-            patch.object(main, "desktop_folder", return_value=folder),
+            patch.object(ui_app, "microphone_access_issue", return_value=None, create=True),
+            patch.object(ui_app, "settings_file", return_value=folder / "settings.json"),
+            patch.object(ui_app, "desktop_folder", return_value=folder),
             patch(
                 "tkinter.messagebox.showerror", side_effect=lambda *a, **k: self.errors.append(a)
             ),
@@ -38,7 +38,7 @@ class GuiTests(unittest.TestCase):
         for item in self.patches:
             item.start()
             self.addCleanup(item.stop)
-        self.app = main.RecorderApp(self.root, FakeAudio())
+        self.app = ui_app.RecorderApp(self.root, FakeAudio())
         self.wait_for(lambda: self.app.state == "idle")
 
     def destroy(self):
@@ -66,7 +66,7 @@ class GuiTests(unittest.TestCase):
 
     def test_blocked_desktop_permission_prevents_recording_and_explains_setting(self):
         with patch.object(
-            main, "microphone_access_issue", return_value="데스크톱 앱 마이크 접근 차단"
+            ui_app, "microphone_access_issue", return_value="데스크톱 앱 마이크 접근 차단"
         ):
             self.app.start()
         self.assertEqual(self.app.state, "idle")
@@ -77,24 +77,27 @@ class GuiTests(unittest.TestCase):
     def test_resizing_window_expands_controls_in_both_directions(self):
         self.root.deiconify()
         self.root.update()
-        before = (self.app.start_button.winfo_width(), self.app.start_button.winfo_height())
+        before = (
+            self.app.view.start_button.winfo_width(),
+            self.app.view.start_button.winfo_height(),
+        )
         self.root.geometry(f"{self.root.winfo_width() + 240}x{self.root.winfo_height() + 180}")
         self.root.update()
-        self.assertGreater(self.app.start_button.winfo_width(), before[0])
-        self.assertGreater(self.app.start_button.winfo_height(), before[1])
+        self.assertGreater(self.app.view.start_button.winfo_width(), before[0])
+        self.assertGreater(self.app.view.start_button.winfo_height(), before[1])
         self.assertTrue(all(self.root.resizable()))
 
     def test_start_stop_buttons_and_playback_enable_after_save(self):
-        self.assertTrue(self.app.stop_button.instate(["disabled"]))
-        self.app.start_button.invoke()
-        self.assertTrue(self.app.start_button.instate(["disabled"]))
+        self.assertTrue(self.app.view.stop_button.instate(["disabled"]))
+        self.app.view.start_button.invoke()
+        self.assertTrue(self.app.view.start_button.instate(["disabled"]))
         self.wait_for(lambda: self.app.state == "recording")
-        self.assertEqual(self.app.rec_text.get(), "● REC")
-        self.app.stop_button.invoke()
+        self.assertEqual(self.app.view.rec_text.get(), "● REC")
+        self.app.view.stop_button.invoke()
         self.wait_for(lambda: self.app.state == "idle")
-        self.assertEqual(self.app.status.get(), "저장 완료")
+        self.assertEqual(self.app.view.status.get(), "저장 완료")
         self.assertTrue(self.app.last_file.exists())
-        self.assertTrue(self.app.play_button.instate(["!disabled"]))
+        self.assertTrue(self.app.view.play_button.instate(["!disabled"]))
         self.assertFalse(self.errors)
 
     def test_keyboard_record_save_and_repeated_start(self):
@@ -125,7 +128,7 @@ class GuiTests(unittest.TestCase):
         self.app.start()
         self.wait_for(lambda: self.app.state == "recording")
         with patch.object(self.app, "refresh_devices") as refresh:
-            self.app.refresh_button.configure(command=refresh)
+            self.app.view.refresh_button.configure(command=refresh)
             self.root.event_generate("<F5>")
             self.root.update()
             refresh.assert_not_called()
@@ -162,9 +165,9 @@ class GuiTests(unittest.TestCase):
         self.root.update()
         self.root.focus_force()
         for key, button in (
-            ("<Control-KeyPress-o>", self.app.open_folder_button),
-            ("<F5>", self.app.refresh_button),
-            ("<Control-KeyPress-p>", self.app.play_button),
+            ("<Control-KeyPress-o>", self.app.view.open_folder_button),
+            ("<F5>", self.app.view.refresh_button),
+            ("<Control-KeyPress-p>", self.app.view.play_button),
         ):
             with patch.object(self.app, "open_folder") as action:
                 button.configure(command=action, state="normal")
@@ -193,7 +196,7 @@ class GuiTests(unittest.TestCase):
         from types import SimpleNamespace
 
         with patch.object(self.app, "start") as start:
-            self.app.start_button.configure(command=start)
+            self.app.view.start_button.configure(command=start)
             self.app.on_control_shortcut(SimpleNamespace(keycode=82, keysym="Hangul", state=4))
             start.assert_called_once_with()
             self.app.on_control_shortcut(SimpleNamespace(keycode=82, keysym="r", state=0x20004))

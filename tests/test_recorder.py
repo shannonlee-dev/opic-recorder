@@ -14,15 +14,15 @@ from tempfile import TemporaryDirectory
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 
+from opic_recorder import Recorder
+from opic_recorder.devices import microphone_choices
+from opic_recorder.settings import load_settings, save_settings
+from opic_recorder.wav import WaveSink, reserve_recording
+
+
 class ImplementationExists(unittest.TestCase):
     def test_executable_module_exists(self):
         self.assertIsNotNone(importlib.util.find_spec("main"), "main.py is missing")
-
-
-if importlib.util.find_spec("main"):
-    import main
-else:
-    main = None
 
 
 class FakeAudio:
@@ -92,7 +92,6 @@ class FakeAudio:
         return self.stream
 
 
-@unittest.skipIf(main is None, "Implementation not yet written")
 class RecorderTests(unittest.TestCase):
     def setUp(self):
         self.temp = TemporaryDirectory()
@@ -118,7 +117,7 @@ class RecorderTests(unittest.TestCase):
         stamp = datetime(2026, 11, 15, 23, 59, 59)
         paths = []
         for _ in range(3):
-            path, file = main.reserve_recording(self.root, stamp)
+            path, file = reserve_recording(self.root, stamp)
             file.write(b"keep")
             file.close()
             paths.append(path)
@@ -163,22 +162,22 @@ class RecorderTests(unittest.TestCase):
                     {"name": "연결 안 된 마이크", "hostapi": 2, "max_input_channels": 2},
                 ]
 
-        choices, default = main.microphone_choices(DeviceList())
+        choices, default = microphone_choices(DeviceList())
         self.assertEqual(default, 0)
         self.assertEqual(choices, [(0, "USB 마이크 (기본)"), (1, "JBL Tour Pro 3 마이크")])
 
     def test_settings_persist_and_corruption_is_reported(self):
         config = self.root / "settings.json"
         folder = self.root / "한글 녹음 폴더"
-        main.save_settings(config, folder)
-        self.assertEqual(main.load_settings(config), (folder, None))
+        save_settings(config, folder)
+        self.assertEqual(load_settings(config), (folder, None))
         config.write_text("{broken", encoding="utf-8")
-        path, warning = main.load_settings(config)
+        path, warning = load_settings(config)
         self.assertIsNone(path)
         self.assertTrue(warning)
 
     def test_recording_drains_final_callback_and_repeated_runs(self):
-        rec = main.Recorder(FakeAudio())
+        rec = Recorder(FakeAudio())
         paths = []
         for _ in range(3):
             rec.start(self.root, 0)
@@ -203,7 +202,7 @@ class RecorderTests(unittest.TestCase):
         self.assertEqual(len(set(paths)), 3)
 
     def test_unsupported_48khz_uses_native_rate(self):
-        rec = main.Recorder(FakeAudio(rate=44100))
+        rec = Recorder(FakeAudio(rate=44100))
         rec.start(self.root, 0)
         info = self.wait_event(rec, "started")
         self.assertEqual(info["rate"], 44100)
@@ -212,7 +211,7 @@ class RecorderTests(unittest.TestCase):
             self.assertEqual(audio.getframerate(), 44100)
 
     def test_disconnect_preserves_already_received_pcm(self):
-        rec = main.Recorder(FakeAudio(disconnect=True))
+        rec = Recorder(FakeAudio(disconnect=True))
         rec.start(self.root, 0)
         result = self.wait_event(rec, "finished")
         rec.thread.join(3)
@@ -221,7 +220,7 @@ class RecorderTests(unittest.TestCase):
             self.assertEqual(audio.readframes(3), struct.pack("<hhh", 1000, -1000, 0))
 
     def test_permission_error_leaves_no_empty_recording(self):
-        rec = main.Recorder(FakeAudio(start_error=True))
+        rec = Recorder(FakeAudio(start_error=True))
         rec.start(self.root, 0)
         result = self.wait_event(rec, "finished")
         rec.thread.join(3)
@@ -230,8 +229,8 @@ class RecorderTests(unittest.TestCase):
         self.assertEqual(list(self.root.rglob("*.wav")), [])
 
     def test_disk_write_failure_preserves_complete_previous_frames(self):
-        path, file = main.reserve_recording(self.root, datetime.now())
-        sink = main.WaveSink(file, 48000)
+        path, file = reserve_recording(self.root, datetime.now())
+        sink = WaveSink(file, 48000)
         sink.write(struct.pack("<hh", 10, 20))
         original = sink.wav.writeframesraw
 
@@ -252,7 +251,7 @@ class RecorderTests(unittest.TestCase):
             "<480h", *(int(16000 * math.sin(2 * math.pi * i / 480)) for i in range(480))
         )
         chunk = cycle * 30
-        rec = main.Recorder(FakeAudio(chunks=[chunk] * 100, tail=b""))
+        rec = Recorder(FakeAudio(chunks=[chunk] * 100, tail=b""))
         rec.start(self.root, 0)
         self.wait_event(rec, "started")
         result = self.finish(rec)
@@ -262,7 +261,7 @@ class RecorderTests(unittest.TestCase):
             self.assertEqual(audio.readframes(1440000), cycle * 3000)
 
     def test_buffer_overflow_stops_and_keeps_queued_audio(self):
-        rec = main.Recorder(FakeAudio(chunks=[b"\x01\x00"] * 300, tail=b""))
+        rec = Recorder(FakeAudio(chunks=[b"\x01\x00"] * 300, tail=b""))
         rec.start(self.root, 0)
         result = self.wait_event(rec, "finished")
         rec.thread.join(3)
@@ -272,7 +271,7 @@ class RecorderTests(unittest.TestCase):
             self.assertEqual(audio.getnframes(), 256)
 
     def test_input_overflow_is_reported_and_received_audio_kept(self):
-        rec = main.Recorder(FakeAudio(status="input overflow", tail=b""))
+        rec = Recorder(FakeAudio(status="input overflow", tail=b""))
         rec.start(self.root, 0)
         result = self.wait_event(rec, "finished")
         rec.thread.join(3)
@@ -283,7 +282,7 @@ class RecorderTests(unittest.TestCase):
     def test_unwritable_destination_reports_error_and_stops_worker(self):
         blocked = self.root / "not-a-directory"
         blocked.write_bytes(b"do not overwrite")
-        rec = main.Recorder(FakeAudio())
+        rec = Recorder(FakeAudio())
         rec.start(blocked, 0)
         result = self.wait_event(rec, "finished")
         rec.thread.join(3)
