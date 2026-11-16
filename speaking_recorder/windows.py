@@ -123,3 +123,28 @@ def stop_playback() -> None:
 def open_folder(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
     os.startfile(str(path))
+
+
+def recycle_file(path: Path) -> None:
+    """Move one recording to the Windows Recycle Bin; surface shell failures."""
+    import base64
+    import subprocess
+
+    if not path.is_file():
+        raise FileNotFoundError('파일이 이동되었거나 이미 삭제되었습니다.')
+    literal = str(path.resolve()).replace("'", "''")
+    script = (
+        "$ErrorActionPreference = 'Stop'; "
+        "Add-Type -AssemblyName Microsoft.VisualBasic; "
+        f"[Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('{literal}', "
+        "[Microsoft.VisualBasic.FileIO.UIOption]::OnlyErrorDialogs, "
+        "[Microsoft.VisualBasic.FileIO.RecycleOption]::SendToRecycleBin, "
+        "[Microsoft.VisualBasic.FileIO.UICancelOption]::ThrowException)"
+    )
+    result = subprocess.run(
+        ['powershell.exe', '-NoProfile', '-NonInteractive', '-EncodedCommand',
+         base64.b64encode(script.encode('utf-16-le')).decode('ascii')],
+        capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW,
+    )
+    if result.returncode or path.exists():
+        raise OSError('휴지통으로 이동하지 못했습니다. 파일 사용 여부와 접근 권한을 확인해 주세요.')

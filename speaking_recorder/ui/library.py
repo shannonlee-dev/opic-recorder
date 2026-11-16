@@ -4,7 +4,7 @@ import threading
 import tkinter as tk
 from tkinter import ttk, messagebox
 from ..library import scan_recordings
-from ..windows import play_file, stop_playback
+from ..windows import play_file, stop_playback, recycle_file
 
 BG = '#ffffff'
 CARD = '#f7f7f5'
@@ -23,6 +23,8 @@ class LibraryView(tk.Frame):
         self.results = queue.Queue()
         self.page = 0
         self.idle = True
+        self.delete_buttons = []
+        self.on_deleted = lambda path: None
         self.label('MY WORKSPACE  /  LIBRARY', MUTED, 9).pack(anchor='w')
         header = tk.Frame(self, bg=BG)
         header.pack(fill='x', pady=(14, 4))
@@ -135,6 +137,7 @@ class LibraryView(tk.Frame):
         self.render()
 
     def render(self):
+        self.delete_buttons = []
         for child in self.cards.winfo_children():
             child.destroy()
         records = self.filtered()
@@ -153,6 +156,10 @@ class LibraryView(tk.Frame):
             icon = tk.Label(card, text='▶' if selected else '♫', bg=card['bg'],
                             fg=ACCENT if selected else '#8c78b6', font=('Segoe UI', 19))
             icon.pack(side='left', padx=(0, 12))
+            delete_button = self.button(card, '삭제', lambda path=r.path: self.delete(path), '#b24d45')
+            delete_button.config(bg=card['bg'], padx=8, pady=5)
+            delete_button.pack(side='right', padx=(8, 0))
+            self.delete_buttons.append(delete_button)
             info = tk.Frame(card, bg=card['bg'])
             info.pack(side='left', fill='x', expand=True)
             name = r.path.stem
@@ -192,6 +199,8 @@ class LibraryView(tk.Frame):
 
     def set_idle(self, idle):
         self.idle = idle
+        for button in self.delete_buttons:
+            button.config(state='normal' if idle else 'disabled')
         self.play_button.config(state='normal' if idle and self.selected else 'disabled')
 
     def play_path(self, path):
@@ -210,3 +219,27 @@ class LibraryView(tk.Frame):
 
     def stop(self):
         stop_playback()
+
+    def delete(self, path):
+        if not self.idle:
+            return
+        if not messagebox.askyesno(
+            '녹음 삭제', f'이 녹음을 삭제할까요?\n\n{path.name}\n\n휴지통으로 이동합니다.',
+            parent=self, icon='warning', default='no',
+        ):
+            return
+        if not self.idle:
+            return
+        try:
+            stop_playback()
+            recycle_file(path)
+        except (OSError, RuntimeError) as exc:
+            messagebox.showerror('삭제 실패', str(exc), parent=self)
+            return
+        self.records = [record for record in self.records if record.path != path]
+        if self.selected == path:
+            self.selected = None
+            self.track.config(text='다시 듣고 싶은 녹음을 선택하세요')
+        self.on_deleted(path)
+        self.render()
+        self.refresh()

@@ -113,6 +113,38 @@ class GuiTests(unittest.TestCase):
                 self.root.update()
             play.assert_called_once_with(Path('track-0.wav'))
 
+    def test_delete_confirmation_cancel_success_and_failure(self):
+        self.app.start()
+        self.wait_for(lambda: self.app.state == 'recording')
+        self.app.stop()
+        self.wait_for(lambda: self.app.state == 'idle')
+        library = self.app.view.library
+        self.wait_for(lambda: len(library.records) == 1)
+        path = library.records[0].path
+        library.select(path)
+        with patch('tkinter.messagebox.askyesno', return_value=False) as confirm:
+            with patch('speaking_recorder.ui.library.recycle_file') as recycle:
+                library.delete_buttons[0].invoke()
+                confirm.assert_called_once()
+                recycle.assert_not_called()
+                self.assertTrue(path.exists())
+        with patch('tkinter.messagebox.askyesno', return_value=True):
+            with patch('speaking_recorder.ui.library.recycle_file', side_effect=OSError('locked')):
+                library.delete(path)
+                self.assertEqual(library.selected, path)
+                self.assertTrue(path.exists())
+                self.assertTrue(self.errors)
+            with patch('speaking_recorder.ui.library.recycle_file', side_effect=lambda p: p.unlink()):
+                library.delete(path)
+        self.assertIsNone(library.selected)
+        self.assertIsNone(self.app.last_file)
+        self.assertFalse(library.records)
+        self.assertTrue(self.app.view.play_button.instate(['disabled']))
+        with patch('tkinter.messagebox.askyesno') as confirm:
+            library.set_idle(False)
+            library.delete(path)
+            confirm.assert_not_called()
+
     def test_blocked_desktop_permission_prevents_recording_and_explains_setting(self):
         with patch.object(
             ui_app, "microphone_access_issue", return_value="데스크톱 앱 마이크 접근 차단"

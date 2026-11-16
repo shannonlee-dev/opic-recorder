@@ -51,6 +51,7 @@ class RecorderApp:
                 "show_shortcuts": self.show_shortcuts,
             },
         )
+        self.view.library.on_deleted = self.on_recording_deleted
         self.view.library.load(self.folder)
         self.shortcut_buttons = {
             "r": self.view.start_button,
@@ -287,6 +288,14 @@ class RecorderApp:
         self.stop_playback()
         self.root.after_cancel(self.poll_id)
         self.root.destroy()
+
+    def on_recording_deleted(self, path):
+        if self.last_file == path:
+            self.last_file = None
+            self.playable = False
+            self.view.file_text.set("최근 녹음 삭제됨")
+            self.view.path_text.set(f"저장 위치: {self.folder}")
+            self.update_buttons()
 
     def open_folder(self):
         from tkinter import messagebox
