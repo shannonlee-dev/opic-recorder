@@ -64,6 +64,55 @@ class GuiTests(unittest.TestCase):
             time.sleep(0.01)
         self.fail("GUI did not reach expected state")
 
+    def test_library_refresh_search_select_and_recording_guard(self):
+        self.app.start()
+        self.wait_for(lambda: self.app.state == "recording")
+        self.app.stop()
+        self.wait_for(lambda: self.app.state == "idle")
+        library = self.app.view.library
+        self.wait_for(lambda: len(library.records) == 1)
+        path = library.records[0].path
+        library.select(path)
+        with patch("speaking_recorder.ui.library.play_file") as play:
+            library.play()
+            play.assert_called_once_with(path)
+            play.reset_mock()
+            self.app.start()
+            library.play()
+            play.assert_not_called()
+        self.app.stop()
+        self.wait_for(lambda: self.app.state == "idle")
+        library.query.set("no matching recording")
+        self.assertEqual(library.filtered(), [])
+        library.query.set("")
+        self.assertTrue(library.filtered())
+
+    def test_library_cards_leave_player_visible_and_filter_by_date(self):
+        from speaking_recorder.library import Recording
+
+        library = self.app.view.library
+        library.records = [Recording(Path(f'track-{i}.wav'), f'2026-11-{16-i:02}', 60, 1024)
+                           for i in range(7)]
+        library.render()
+        self.root.deiconify()
+        self.root.update()
+        button_bottom = library.play_button.winfo_rooty() + library.play_button.winfo_height()
+        self.assertLessEqual(button_bottom, self.root.winfo_rooty() + self.root.winfo_height())
+        library.turn(1)
+        self.assertEqual(library.page, 1)
+        library.date.set('2026-11-16')
+        self.assertEqual(len(library.filtered()), 1)
+        self.assertEqual(library.page, 0)
+        self.root.update()
+        card = library.cards.winfo_children()[0]
+        with patch('speaking_recorder.ui.library.play_file') as play:
+            with patch.object(Path, 'is_file', return_value=True):
+                card.event_generate('<Button-1>')
+                card.event_generate('<ButtonRelease-1>')
+                card.event_generate('<Button-1>')
+                self.root.update()
+            play.assert_called_once_with(Path('track-0.wav'))
+
     def test_blocked_desktop_permission_prevents_recording_and_explains_setting(self):
         with patch.object(
             ui_app, "microphone_access_issue", return_value="데스크톱 앱 마이크 접근 차단"
@@ -84,7 +133,7 @@ class GuiTests(unittest.TestCase):
         self.root.geometry(f"{self.root.winfo_width() + 240}x{self.root.winfo_height() + 180}")
         self.root.update()
         self.assertGreater(self.app.view.start_button.winfo_width(), before[0])
-        self.assertGreater(self.app.view.start_button.winfo_height(), before[1])
+        self.assertEqual(self.app.view.start_button.winfo_height(), before[1])
         self.assertTrue(all(self.root.resizable()))
 
     def test_start_stop_buttons_and_playback_enable_after_save(self):

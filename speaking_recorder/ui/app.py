@@ -51,6 +51,7 @@ class RecorderApp:
                 "show_shortcuts": self.show_shortcuts,
             },
         )
+        self.view.library.load(self.folder)
         self.shortcut_buttons = {
             "r": self.view.start_button,
             "s": self.view.stop_button,
@@ -137,6 +138,7 @@ class RecorderApp:
 
     def update_buttons(self):
         idle = self.state == "idle"
+        self.view.library.set_idle(idle)
         self.view.start_button.configure(state="normal" if idle and self.devices else "disabled")
         self.view.stop_button.configure(state="normal" if self.state == "recording" else "disabled")
         self.view.mic.configure(state="readonly" if idle else "disabled")
@@ -179,6 +181,7 @@ class RecorderApp:
         self.update_buttons()
 
     def poll(self):
+        self.view.library.poll()
         from tkinter import messagebox
 
         try:
@@ -277,6 +280,8 @@ class RecorderApp:
             )
         elif self.close_mode:
             self.shutdown()
+        if not self.close_mode:
+            self.view.library.refresh()
 
     def shutdown(self):
         self.stop_playback()
@@ -314,6 +319,7 @@ class RecorderApp:
             messagebox.showerror("저장 위치 변경 실패", str(exc), parent=self.root)
             return
         self.folder = folder
+        self.view.library.load(folder)
         self.last_file = None
         self.playable = False
         self.view.file_text.set("최근 저장 파일 없음")
