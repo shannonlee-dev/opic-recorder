@@ -7,6 +7,7 @@ Windows 10/11에서 영어 말하기 연습을 WAV로 녹음하는 한국어 데
 
 개인이 제작한 영어 말하기 연습용 녹음기입니다. 특정 시험 주관사와 제휴한 제품이 아니며, 공식 시험 문제·음원이나 채점 기능을 제공하지 않습니다.
 
+**사용허락:** [MIT 라이선스](LICENSE)로 사용·수정·재배포·상업적 이용을 허용합니다. 저작권 표시와 라이선스 문구를 유지해야 하며, 소프트웨어는 보증 없이 제공됩니다. 외부 구성 요소에는 [별도 고지와 라이선스](THIRD_PARTY_NOTICES.md)가 적용됩니다.
 
 앱 실행과 EXE 빌드는 **Windows Python**에서 수행합니다.
 
@@ -35,7 +36,7 @@ Windows 10/11에서 영어 말하기 연습을 WAV로 녹음하는 한국어 데
 | `speaking_recorder/settings.py` | 저장 위치 설정 읽기·원자적 저장 |
 | `speaking_recorder/windows.py` | Windows 폴더, 마이크 권한, 재생, 탐색기, DPI |
 | `main.py` | 실행 진입점과 기존 import 호환 |
-| `build.bat`, `scripts/` | EXE 빌드, 아이콘 생성, 배포 패키지 검증 |
+| `Speaking_Recorder.spec`, `build.bat`, `scripts/` | EXE 빌드, 아이콘 생성, 배포 패키지 검증 |
 | `tests/` | WAV·파일 I/O, Windows Tk 동작, 모듈 의존 경계 테스트 |
 
 핵심 원칙은 **UI가 녹음 엔진에 의존하고, 녹음 엔진은 UI를 모르게 하는 것**입니다.
@@ -131,7 +132,9 @@ WSL 터미널에서 Windows 빌드를 호출하려면 다음을 사용합니다.
 cmd.exe /d /c "$(wslpath -w ./build.bat) --no-pause"
 ```
 
-독립 배포 시에는 `dist\Speaking_Recorder.exe`만 다른 Windows 컴퓨터로 복사하면 됩니다.
+공개 배포에는 `dist\Speaking_Recorder-windows.zip`을 사용하세요. EXE와 MIT 라이선스, 외부 라이브러리 고지 원문이 함께 들어 있습니다. 빌드 시 EXE 내부의 고지 내용과 ASIO DLL 제외 여부를 검증한 뒤 ZIP을 만듭니다.
+
+실행에는 `dist\Speaking_Recorder.exe`만 있으면 됩니다. 라이선스 원문은 EXE 내부에도 포함됩니다.
 그 컴퓨터에는 Python이나 pip 패키지가 필요하지 않습니다. 바로가기 자동 설치도 원하면
 `install-shortcut.ps1`를 함께 복사하고 Windows PowerShell에서 아래처럼 실행하세요.
 

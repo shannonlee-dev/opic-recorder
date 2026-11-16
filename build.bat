@@ -16,9 +16,11 @@ set "SPEAKING_PYTHON=.venv-win\Scripts\python.exe"
 if not "%errorlevel%"=="0" goto failed
 "%SPEAKING_PYTHON%" -m unittest discover -s tests -v
 if not "%errorlevel%"=="0" goto failed
-"%SPEAKING_PYTHON%" -m PyInstaller --noconfirm --clean --onefile --windowed --noupx --name Speaking_Recorder --icon assets\speaking-recorder.ico --add-data "assets\speaking-recorder.ico;assets" --hidden-import _cffi_backend --collect-all _sounddevice_data main.py
+"%SPEAKING_PYTHON%" -m PyInstaller --noconfirm --clean Speaking_Recorder.spec
 if not "%errorlevel%"=="0" goto failed
 if not exist "dist\Speaking_Recorder.exe" goto failed
+"%SPEAKING_PYTHON%" scripts\package_release.py
+if errorlevel 1 goto failed
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0install-shortcut.ps1" -ExecutablePath "%~dp0dist\Speaking_Recorder.exe"
 if errorlevel 1 goto shortcut_error

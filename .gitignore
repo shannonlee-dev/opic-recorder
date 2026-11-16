@@ -7,3 +7,4 @@ build/
 dist/
 *.spec
 *.wav
+!Speaking_Recorder.spec
