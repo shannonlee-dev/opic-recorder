@@ -15,7 +15,7 @@ MAX_PCM_BYTES = 0xFFFFFFFF - 36 - 1  # RIFF/WAV 크기 제한에 맞춘 짝수 �
 def reserve_recording(folder: Path, started_at: datetime) -> tuple[Path, BinaryIO]:
     day = folder / started_at.strftime("%Y-%m-%d")
     day.mkdir(parents=True, exist_ok=True)
-    stem = started_at.strftime("%Hh%Mm_OPIc_%Y%m%d_%H%M%S")
+    stem = started_at.strftime("%Hh%Mm_Speaking_%Y%m%d_%H%M%S")
     index = 0
     while True:
         suffix = f"_{index:04d}" if index else ""

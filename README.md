@@ -1,11 +1,13 @@
-# OPIc Voice Recorder
+# Speaking Recorder
 
 ## 프로젝트 소개
 
 Windows 10/11에서 영어 말하기 연습을 WAV로 녹음하는 한국어 데스크톱 앱입니다.
 녹음 시작과 종료만 누르면 날짜별 폴더에 새 파일이 저장됩니다. 발음 평가는 앱에서 수행하지 않으며, 필요한 파일을 사용자가 직접 ChatGPT에 업로드하면 됩니다.
 
-프로젝트 루트는 **WSL의 `/home/shannon/__dev/opic-voice-recorder`**입니다.
+개인이 제작한 영어 말하기 연습용 녹음기입니다. 특정 시험 주관사와 제휴한 제품이 아니며, 공식 시험 문제·음원이나 채점 기능을 제공하지 않습니다.
+
+
 앱 실행과 EXE 빌드는 **Windows Python**에서 수행합니다.
 
 ## 핵심 특징
@@ -14,7 +16,7 @@ Windows 10/11에서 영어 말하기 연습을 WAV로 녹음하는 한국어 데
 - `sounddevice.RawInputStream` → WAV Linear PCM 16-bit, Mono, 48,000Hz 우선
 - 48kHz를 사용할 수 없으면 장치 기본 레이트 및 지원 가능한 다른 레이트를 확인하고 실제 레이트 표시
 - 음량 보정, 노이즈 제거, 에코 및 리샘플링을 앱에서 적용하지 않음
-- 실제 Windows 바탕화면의 `OPIc_Recordings/시작날짜/`에 자동 저장
+- 실제 Windows 바탕화면의 `Speaking_Recordings/시작날짜/`에 자동 저장
 - OneDrive 등 바탕화면 리디렉션 지원, 같은 초에 시작해도 기존 파일 보존
 - 저장 위치 설정 유지, 탐색기 열기, 최근 저장 파일 비동기 재생
 - 녹음 중 종료 시 저장 / 현재 녹음 삭제 / 취소 선택
@@ -25,13 +27,13 @@ Windows 10/11에서 영어 말하기 연습을 WAV로 녹음하는 한국어 데
 
 | 구성 요소 | 역할 |
 |---|---|
-| `opic_recorder/app.py` | Windows 초기화, Tk와 오디오 백엔드 조립 |
-| `opic_recorder/ui/` | 화면 배치(`view.py`)와 사용자 입력·상태 제어(`app.py`) |
-| `opic_recorder/recording.py` | 녹음 작업 스레드, 오디오 큐, 시작·종료 이벤트 |
-| `opic_recorder/wav.py` | 파일명 충돌 방지, PCM 기록, WAV 헤더와 파일 마무리 |
-| `opic_recorder/devices.py` | 마이크 목록과 기본 장치 선택 |
-| `opic_recorder/settings.py` | 저장 위치 설정 읽기·원자적 저장 |
-| `opic_recorder/windows.py` | Windows 폴더, 마이크 권한, 재생, 탐색기, DPI |
+| `speaking_recorder/app.py` | Windows 초기화, Tk와 오디오 백엔드 조립 |
+| `speaking_recorder/ui/` | 화면 배치(`view.py`)와 사용자 입력·상태 제어(`app.py`) |
+| `speaking_recorder/recording.py` | 녹음 작업 스레드, 오디오 큐, 시작·종료 이벤트 |
+| `speaking_recorder/wav.py` | 파일명 충돌 방지, PCM 기록, WAV 헤더와 파일 마무리 |
+| `speaking_recorder/devices.py` | 마이크 목록과 기본 장치 선택 |
+| `speaking_recorder/settings.py` | 저장 위치 설정 읽기·원자적 저장 |
+| `speaking_recorder/windows.py` | Windows 폴더, 마이크 권한, 재생, 탐색기, DPI |
 | `main.py` | 실행 진입점과 기존 import 호환 |
 | `build.bat`, `scripts/` | EXE 빌드, 아이콘 생성, 배포 패키지 검증 |
 | `tests/` | WAV·파일 I/O, Windows Tk 동작, 모듈 의존 경계 테스트 |
@@ -53,8 +55,8 @@ flowchart LR
 
 ## 바로 사용하기
 
-빌드와 설치가 완료된 컴퓨터에서는 Windows 바탕화면의 **OPIc Voice Recorder** 바로가기를 더블클릭합니다.
-바로가기는 `%LOCALAPPDATA%\Programs\OPIcRecorder\OPIc_Recorder.exe`를 실행하므로 WSL이 꺼져 있어도 실행됩니다.
+빌드와 설치가 완료된 컴퓨터에서는 Windows 바탕화면의 **Speaking Recorder** 바로가기를 더블클릭합니다.
+바로가기는 `%LOCALAPPDATA%\Programs\SpeakingRecorder\Speaking_Recorder.exe`를 실행하므로 WSL이 꺼져 있어도 실행됩니다.
 
 바탕화면의 블랙 글라스·네온 마이크·빨간 녹음 표시 아이콘으로 앱을 찾을 수 있습니다.
 창 테두리나 오른쪽 아래 모서리를 드래그하면 가로·세로 크기를 조절할 수 있으며,
@@ -93,10 +95,10 @@ flowchart LR
 Windows 10/11과 Python 3.11 이상이 필요합니다. Python 설치 시 Python Launcher와 Tcl/Tk 항목을 포함하세요.
 이 프로젝트에서 확인한 빌드 환경은 Windows Python 3.12 x64입니다.
 
-Windows 명령 프롬프트에서 다음을 실행합니다. 배포 이름이 Ubuntu가 아니면 경로의 배포 이름을 바꾸세요.
+Windows 명령 프롬프트에서 다음을 실행합니다. 아래 경로는 실제 프로젝트 위치로 바꾸세요.
 
 ```bat
-pushd "\\wsl.localhost\Ubuntu\home\shannon\__dev\opic-voice-recorder"
+cd /d C:\dev\speaking-recorder
 py -3 -m venv .venv-win
 .venv-win\Scripts\python.exe -m pip install -r requirements.txt
 .venv-win\Scripts\python.exe main.py
@@ -110,7 +112,7 @@ py -3 -m venv .venv-win
 Windows 탐색기에서 프로젝트의 **`build.bat`를 더블클릭**하거나 Windows 명령 프롬프트에서 실행합니다.
 
 ```bat
-pushd "\\wsl.localhost\Ubuntu\home\shannon\__dev\opic-voice-recorder"
+cd /d C:\dev\speaking-recorder
 build.bat
 ```
 
@@ -119,22 +121,22 @@ build.bat
 1. Windows Python 3.11 이상을 확인하고 `.venv-win` 가상환경을 만듭니다.
 2. `requirements.txt`의 패키지를 설치하고 자동 테스트를 실행합니다.
 3. Python 런타임, Tcl/Tk, PortAudio DLL, CFFI를 포함한 단일 EXE를 만듭니다.
-4. **`dist\OPIc_Recorder.exe`**를 Windows 로컬 앱 폴더에 복사합니다.
-5. 실제 Windows 바탕화면에 **`OPIc Voice Recorder.lnk`**를 만듭니다.
+4. **`dist\Speaking_Recorder.exe`**를 Windows 로컬 앱 폴더에 복사합니다.
+5. 실제 Windows 바탕화면에 **`Speaking Recorder.lnk`**를 만듭니다.
 
 Windows 빌드는 Windows Python으로 수행해야 합니다. WSL의 Linux Python으로 Windows EXE를 만들 수는 없습니다.
 WSL 터미널에서 Windows 빌드를 호출하려면 다음을 사용합니다.
 
 ```bash
-cmd.exe /d /c '\\wsl.localhost\Ubuntu\home\shannon\__dev\opic-voice-recorder\build.bat --no-pause'
+cmd.exe /d /c "$(wslpath -w ./build.bat) --no-pause"
 ```
 
-독립 배포 시에는 `dist\OPIc_Recorder.exe`만 다른 Windows 컴퓨터로 복사하면 됩니다.
+독립 배포 시에는 `dist\Speaking_Recorder.exe`만 다른 Windows 컴퓨터로 복사하면 됩니다.
 그 컴퓨터에는 Python이나 pip 패키지가 필요하지 않습니다. 바로가기 자동 설치도 원하면
 `install-shortcut.ps1`를 함께 복사하고 Windows PowerShell에서 아래처럼 실행하세요.
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install-shortcut.ps1 -ExecutablePath .\OPIc_Recorder.exe
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install-shortcut.ps1 -ExecutablePath .\Speaking_Recorder.exe
 ```
 
 `ExecutionPolicy Bypass`는 해당 PowerShell 프로세스에만 적용되며 시스템 실행 정책을 변경하지 않습니다.
@@ -143,7 +145,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install-shortcut.ps1 -
 
 ### 녹음 보관 폴더 아이콘
 
-`OPIc_Recordings` 폴더에는 검은 유리 타일과 청록·보라 음성 파형 아이콘을 적용할 수 있습니다.
+`Speaking_Recordings` 폴더에는 검은 유리 타일과 청록·보라 음성 파형 아이콘을 적용할 수 있습니다.
 폴더가 만들어진 뒤 아래 명령을 실행합니다. 다른 저장 위치에는 `-FolderPath 'D:\녹음'`을 추가하세요.
 
 ```powershell
@@ -151,24 +153,25 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install-recordings-ico
 ```
 
 아이콘과 `desktop.ini`는 해당 폴더 안에 숨김 파일로 보관됩니다. 기존 녹음 파일은 변경하지 않습니다.
-원본 이미지는 `assets/opic-recordings.png`, Windows 아이콘은 `assets/opic-recordings.ico`입니다.
+원본 이미지는 `assets/speaking-recordings.png`, Windows 아이콘은 `assets/speaking-recordings.ico`입니다.
 
 ## 파일 및 설정 관리
 
 ```text
 실제 Windows 바탕화면/
-└── OPIc_Recordings/
+└── Speaking_Recordings/
     └── 2026-11-15/
-        ├── 09h00m_OPIc_20261115_090000.wav
-        ├── 09h00m_OPIc_20261115_090000_0001.wav
-        └── 09h15m_OPIc_20261115_091530.wav
+        ├── 09h00m_Speaking_20261115_090000.wav
+        ├── 09h00m_Speaking_20261115_090000_0001.wav
+        └── 09h15m_Speaking_20261115_091530.wav
 ```
 
 파일명은 `19h23m_`처럼 24시간제 시·분으로 시작합니다. Windows 로컬 시각의 **녹음 시작 날짜·시간**을 사용합니다. 자정을 넘겨 종료해도 시작 날짜 폴더에 저장됩니다.
 파일 생성은 배타적 생성 모드로 수행하므로 다른 앱 인스턴스와 이름이 겹쳐도 덮어쓰지 않습니다.
 48kHz PCM16 Mono의 크기는 약 5.76MB/분입니다.
 
-**위치 변경**에서 선택한 저장 위치는 `%LOCALAPPDATA%\OPIcRecorder\settings.json`에 저장됩니다.
+**위치 변경**에서 선택한 저장 위치는 `%LOCALAPPDATA%\SpeakingRecorder\settings.json`에 저장됩니다.
+이전 버전의 저장 위치 설정이 있으면 그대로 사용하며, 기존 녹음 파일은 이동하거나 이름을 바꾸지 않습니다.
 프로그램·설정·녹음 파일은 서로 별개입니다. 앱 제거 시 EXE 설치 폴더와 바로가기를 삭제하면 되며 녹음은 남습니다.
 
 바탕화면이 OneDrive 폴더라면 앱이 저장한 파일을 **OneDrive 자체가 동기화할 수 있습니다**.
@@ -192,9 +195,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install-recordings-ico
 WSL에서 하드웨어 없는 핵심 테스트:
 
 ```bash
-cd /home/shannon/__dev/opic-voice-recorder
+cd /path/to/speaking-recorder
 python3 -m unittest discover -s tests -v
-python3 -m compileall -q main.py opic_recorder tests
+python3 -m compileall -q main.py speaking_recorder tests
 ```
 
 Windows에서 GUI 테스트까지 실행:
@@ -209,7 +212,7 @@ Windows에서 GUI 테스트까지 실행:
 Windows GUI 테스트는 실제 Tk 위젯에서 시작·종료 버튼, 저장 후 재생 활성화,
 종료 취소·저장·삭제를 확인하지만 사람의 발음과 실제 마이크 음질을 검증하지는 않습니다.
 
-실제 수행한 결과와 아직 수동 확인이 필요한 항목은 `VERIFICATION.md`에 기록합니다.
+GUI 테스트는 Windows에서 실행하며, 실제 마이크 음질은 아래 수동 확인 항목으로 검증합니다.
 
 ### 최종 사용자 확인
 

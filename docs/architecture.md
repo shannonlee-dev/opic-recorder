@@ -8,9 +8,9 @@
 
 ```text
 main.py                     실행 진입점과 기존 import 호환
-opic_recorder/
+speaking_recorder/
 ├── __init__.py             GUI 없는 공개 API: Recorder, RecordingResult
-├── __main__.py             python -m opic_recorder 실행
+├── __main__.py             python -m speaking_recorder 실행
 ├── app.py                  Windows 확인, DPI 설정, Tk와 sounddevice 조립
 ├── metadata.py             앱 이름
 ├── recording.py            녹음 수명 주기, 작업 스레드, 이벤트
@@ -26,7 +26,7 @@ scripts/                    아이콘 생성과 배포 ZIP 검증·생성
 assets/                     앱·폴더 아이콘 원본
 licenses/                   외부 구성 요소 라이선스 원문
 docs/                       유지보수 문서
-OPIc_Recorder.spec          버전 관리하는 EXE 빌드 명세
+Speaking_Recorder.spec          버전 관리하는 EXE 빌드 명세
 build.bat                   사용자가 실행하는 Windows 빌드 진입점
 install-*.ps1               사용자가 실행하는 설치 진입점
 build/, dist/               생성물, Git 제외
@@ -72,7 +72,7 @@ flowchart TD
 from pathlib import Path
 
 import sounddevice
-from opic_recorder import Recorder
+from speaking_recorder import Recorder
 
 recorder = Recorder(sounddevice)
 recorder.start(Path("recordings"), device=0)  # 실제 입력 장치 인덱스 사용
@@ -86,7 +86,7 @@ recorder.start(Path("recordings"), device=0)  # 실제 입력 장치 인덱스 �
 - `("finished", RecordingResult)`를 받은 뒤 파일을 읽는다. `path`가 없을 수 있고 `error`와 `playable`을 함께 확인해야 한다.
 - `finished`는 작업 스레드의 마지막 이벤트다. 다시 시작하기 전 `thread.is_alive()`가 거짓인지 확인한다. GUI가 없는 호출자는 `thread.join()`을 쓸 수 있다.
 - 큐는 소비자 하나를 전제로 한다. 여러 소비자가 동시에 읽으면 이벤트가 분산된다.
-- 공개 API는 `opic_recorder.Recorder`와 `RecordingResult`다. 기존 `main.Recorder` import도 유지한다. UI 내부 위젯은 `RecorderApp.view`에 있다.
+- 공개 API는 `speaking_recorder.Recorder`와 `RecordingResult`다. 기존 `main.Recorder` import도 유지한다. UI 내부 위젯은 `RecorderApp.view`에 있다.
 
 이는 같은 Python 프로세스에서 사용할 수 있는 경계다. **다른 프로세스가 EXE를 제어하는 IPC/API는 아직 구현하지 않았다.** 필요해지면 별도 어댑터를 추가하고 같은 녹음 엔진을 사용한다.
 

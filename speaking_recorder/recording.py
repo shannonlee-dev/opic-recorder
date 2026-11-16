@@ -37,7 +37,7 @@ class Recorder:
             raise RuntimeError("이미 녹음 또는 저장 중입니다.")
         self.stop_requested.clear()
         self.thread = threading.Thread(
-            target=self._run, args=(folder, device), name="OPIc recording", daemon=False
+            target=self._run, args=(folder, device), name="Speaking recording", daemon=False
         )
         self.thread.start()
 

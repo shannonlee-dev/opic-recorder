@@ -23,7 +23,7 @@ class RecorderView:
                 else Path(__file__).resolve().parents[2]
             )
             / "assets"
-            / "opic-recorder.ico"
+            / "speaking-recorder.ico"
         )
         if icon.exists():
             root.iconbitmap(default=str(icon))

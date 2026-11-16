@@ -29,7 +29,7 @@ class RecorderApp:
         self.recorder = Recorder(audio)
         self.config = settings_file()
         saved, warning = load_settings(self.config)
-        self.folder = saved if saved is not None else desktop_folder() / "OPIc_Recordings"
+        self.folder = saved if saved is not None else desktop_folder() / "Speaking_Recordings"
         self.state = "idle"
         self.started = None
         self.last_file = None

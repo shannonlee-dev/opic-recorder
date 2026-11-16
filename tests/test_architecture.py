@@ -16,13 +16,13 @@ class BlockDesktopImports(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, path=None, target=None):
         if fullname.split('.')[0] in {'tkinter', 'winsound', 'winreg', 'sounddevice'}:
             raise AssertionError('Core imported desktop dependency: ' + fullname)
-        if fullname in {'opic_recorder.windows', 'opic_recorder.ui', 'opic_recorder.app'}:
+        if fullname in {'speaking_recorder.windows', 'speaking_recorder.ui', 'speaking_recorder.app'}:
             raise AssertionError('Core imported application layer: ' + fullname)
 
 sys.meta_path.insert(0, BlockDesktopImports())
-from opic_recorder import Recorder, RecordingResult
-from opic_recorder import devices, settings, wav
-assert Recorder.__module__ == 'opic_recorder.recording'
+from speaking_recorder import Recorder, RecordingResult
+from speaking_recorder import devices, settings, wav
+assert Recorder.__module__ == 'speaking_recorder.recording'
 """
         result = subprocess.run(
             [sys.executable, "-c", code],
@@ -35,7 +35,7 @@ assert Recorder.__module__ == 'opic_recorder.recording'
 
     def test_legacy_recorder_import_is_same_public_class(self):
         import main
-        from opic_recorder import Recorder, RecordingResult
+        from speaking_recorder import Recorder, RecordingResult
 
         self.assertIs(main.Recorder, Recorder)
         self.assertIs(main.RecordingResult, RecordingResult)

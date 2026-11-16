@@ -11,7 +11,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from test_recorder import FakeAudio
 
-from opic_recorder.ui import app as ui_app
+from speaking_recorder.ui import app as ui_app
 
 
 @unittest.skipUnless(sys.platform == "win32", "Windows Tk / winsound required")

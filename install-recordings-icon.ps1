@@ -1,8 +1,8 @@
 param(
-    [string]$FolderPath = (Join-Path ([Environment]::GetFolderPath('DesktopDirectory')) 'OPIc_Recordings')
+    [string]$FolderPath = (Join-Path ([Environment]::GetFolderPath('DesktopDirectory')) 'Speaking_Recordings')
 )
 $ErrorActionPreference = 'Stop'
-$iconSource = Join-Path $PSScriptRoot 'assets\opic-recordings.ico'
+$iconSource = Join-Path $PSScriptRoot 'assets\speaking-recordings.ico'
 if (-not (Test-Path -LiteralPath $iconSource -PathType Leaf)) {
     throw "Icon not found: $iconSource"
 }
@@ -11,7 +11,7 @@ if (-not (Test-Path -LiteralPath $FolderPath -PathType Container)) {
 }
 $folder = Get-Item -LiteralPath $FolderPath
 $hash = (Get-FileHash -LiteralPath $iconSource -Algorithm SHA256).Hash.Substring(0, 12)
-$iconName = ".opic-recordings-$hash.ico"
+$iconName = ".speaking-recordings-$hash.ico"
 $iconTarget = Join-Path $folder.FullName $iconName
 if (-not (Test-Path -LiteralPath $iconTarget)) {
     Copy-Item -LiteralPath $iconSource -Destination $iconTarget
@@ -19,7 +19,7 @@ if (-not (Test-Path -LiteralPath $iconTarget)) {
 Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
-public static class OPIcFolderIcon {
+public static class SpeakingFolderIcon {
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool WritePrivateProfileString(string section, string key, string value, string path);
@@ -32,7 +32,7 @@ if (-not (Test-Path -LiteralPath $ini)) {
     [IO.File]::WriteAllText($ini, "[.ShellClassInfo]`r`n", [Text.Encoding]::Unicode)
 }
 # Preserve other desktop.ini settings and all recording files.
-if (-not [OPIcFolderIcon]::WritePrivateProfileString('.ShellClassInfo', 'IconResource', "$iconName,0", $ini)) {
+if (-not [SpeakingFolderIcon]::WritePrivateProfileString('.ShellClassInfo', 'IconResource', "$iconName,0", $ini)) {
     throw "Could not update folder icon: $([Runtime.InteropServices.Marshal]::GetLastWin32Error())"
 }
 foreach ($path in @($ini, $iconTarget)) {
@@ -41,5 +41,5 @@ foreach ($path in @($ini, $iconTarget)) {
 }
 $folder.Attributes = $folder.Attributes -bor [IO.FileAttributes]::ReadOnly
 # Notify Explorer about this folder, without restarting the desktop shell.
-[OPIcFolderIcon]::SHChangeNotify(0x00002000, 0x0005, $folder.FullName, [IntPtr]::Zero)
+[SpeakingFolderIcon]::SHChangeNotify(0x00002000, 0x0005, $folder.FullName, [IntPtr]::Zero)
 Write-Host "Folder icon installed: $($folder.FullName)"

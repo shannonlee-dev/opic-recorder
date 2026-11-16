@@ -11,20 +11,20 @@ if not exist ".venv-win\Scripts\python.exe" (
     if errorlevel 1 goto failed
     if not errorlevel 0 goto failed
 )
-set "OPIC_PYTHON=.venv-win\Scripts\python.exe"
-"%OPIC_PYTHON%" -m pip install -r requirements.txt
+set "SPEAKING_PYTHON=.venv-win\Scripts\python.exe"
+"%SPEAKING_PYTHON%" -m pip install -r requirements.txt
 if not "%errorlevel%"=="0" goto failed
-"%OPIC_PYTHON%" -m unittest discover -s tests -v
+"%SPEAKING_PYTHON%" -m unittest discover -s tests -v
 if not "%errorlevel%"=="0" goto failed
-"%OPIC_PYTHON%" -m PyInstaller --noconfirm --clean --onefile --windowed --noupx --name OPIc_Recorder --icon assets\opic-recorder.ico --add-data "assets\opic-recorder.ico;assets" --hidden-import _cffi_backend --collect-all _sounddevice_data main.py
+"%SPEAKING_PYTHON%" -m PyInstaller --noconfirm --clean --onefile --windowed --noupx --name Speaking_Recorder --icon assets\speaking-recorder.ico --add-data "assets\speaking-recorder.ico;assets" --hidden-import _cffi_backend --collect-all _sounddevice_data main.py
 if not "%errorlevel%"=="0" goto failed
-if not exist "dist\OPIc_Recorder.exe" goto failed
+if not exist "dist\Speaking_Recorder.exe" goto failed
 
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0install-shortcut.ps1" -ExecutablePath "%~dp0dist\OPIc_Recorder.exe"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0install-shortcut.ps1" -ExecutablePath "%~dp0dist\Speaking_Recorder.exe"
 if errorlevel 1 goto shortcut_error
 echo.
-echo Build succeeded: %~dp0dist\OPIc_Recorder.exe
-echo Installed app and desktop shortcut: OPIc Voice Recorder
+echo Build succeeded: %~dp0dist\Speaking_Recorder.exe
+echo Installed app and desktop shortcut: Speaking Recorder
 popd
 if /i not "%~1"=="--no-pause" pause
 exit /b 0

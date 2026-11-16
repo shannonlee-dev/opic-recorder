@@ -84,7 +84,10 @@ def desktop_folder() -> Path:
 
 def settings_file() -> Path:
     local = windows_folder("F1B32785-6FBA-4FCF-9D55-7B8E7F157091")
-    return local / "OPIcRecorder" / "settings.json"
+    current = local / "SpeakingRecorder" / "settings.json"
+    # Preserve the save location configured by earlier releases.
+    legacy = local / "OPIcRecorder" / "settings.json"
+    return legacy if not current.exists() and legacy.exists() else current
 
 
 def enable_dpi_awareness() -> None:

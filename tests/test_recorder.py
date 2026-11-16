@@ -14,10 +14,10 @@ from tempfile import TemporaryDirectory
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 
-from opic_recorder import Recorder
-from opic_recorder.devices import microphone_choices
-from opic_recorder.settings import load_settings, save_settings
-from opic_recorder.wav import WaveSink, reserve_recording
+from speaking_recorder import Recorder
+from speaking_recorder.devices import microphone_choices
+from speaking_recorder.settings import load_settings, save_settings
+from speaking_recorder.wav import WaveSink, reserve_recording
 
 
 class ImplementationExists(unittest.TestCase):
@@ -122,7 +122,7 @@ class RecorderTests(unittest.TestCase):
             file.close()
             paths.append(path)
         self.assertEqual(len(set(paths)), 3)
-        self.assertEqual(paths[0].name, "23h59m_OPIc_20261115_235959.wav")
+        self.assertEqual(paths[0].name, "23h59m_Speaking_20261115_235959.wav")
         self.assertEqual(paths[0].parent.name, "2026-11-15")
         self.assertTrue(all(p.read_bytes() == b"keep" for p in paths))
 
