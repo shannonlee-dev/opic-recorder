@@ -13,14 +13,20 @@ speaking_recorder/
 ├── __main__.py             python -m speaking_recorder 실행
 ├── app.py                  Windows 확인, DPI 설정, Tk와 sounddevice 조립
 ├── metadata.py             앱 이름
+├── autotune.py             노래 모드 하드튠: native/ta_autotune.dll(C ABI) 래퍼, 테이크 튜닝·원본 .raw 보존
+├── native/                 ta_autotune.dll (~/__dev/trap-autotune에서 빌드한 하드 튠 DSP)
+├── monitoring.py           노래 모드 라이브 모니터링(녹음과 독립된 WASAPI 저지연 duplex 스트림)
+├── modes.py                영어·노래 모드별 저장 폴더와 설정 파일 이름
 ├── recording.py            녹음 수명 주기, 작업 스레드, 이벤트
 ├── wav.py                  파일명 충돌 방지, PCM 기록, WAV 마무리
 ├── devices.py              마이크 목록 정리와 기본 장치 선택
 ├── settings.py             설정 읽기와 원자적 저장
 ├── windows.py              Known Folder, 마이크 권한, 재생, 탐색기, DPI
 └── ui/
+    ├── launcher.py         첫 화면 모드 선택(캔버스 애니메이션)
     ├── app.py              사용자 입력, 화면 상태, 이벤트 소비
-    └── view.py             위젯 소유와 화면 배치
+    ├── view.py             영어 모드 위젯 소유와 화면 배치
+    └── song_view.py        노래 모드 스테이지(레코드 원 버튼, 모니터링, Takes 목록). 같은 컨트롤러를 쓰며 없는 컨트롤은 None
 tests/                      실제 WAV·파일 I/O, Windows GUI, 의존 경계 검사
 scripts/                    아이콘 생성과 배포 ZIP 검증·생성
 assets/                     앱·폴더 아이콘 원본
@@ -54,6 +60,10 @@ flowchart TD
 - `sounddevice`는 시작 지점에서 생성해 `Recorder`에 전달한다. 테스트에서는 같은 호출 형태의 가짜 오디오 장치를 전달한다.
 - `view.py`는 위젯을 소유하며 전달받은 콜백만 호출한다. 녹음, 설정 저장, 스레드 생성은 하지 않는다.
 - `ui/app.py`는 화면 상태와 사용자 의도를 연결한다. WAV 헤더나 PortAudio 콜백을 다루지 않는다.
+- 첫 화면 `ModeLauncher`가 모드를 고르면 같은 `RecorderApp`이 그 모드의 폴더와 설정 파일로 열린다. 영어는 `Speaking_Recordings`·`settings.json`, 노래는 `Song_Recordings`·`song-settings.json`을 쓴다.
+- 노래 모드 듣기는 우선 DLL의 C++ WASAPI 엔진(`autotune.NativeMonitor`)을 쓴다: 마이크 독점(가능할 때), 헤드폰 공유, 하드튠은 오디오 스레드 안에서 처리. 마이크를 독점하는 동안 녹음기는 `NativeCaptureAudio`(sounddevice와 같은 모양의 어댑터)로 엔진의 마이크 샘플을 받는다. 녹음 중 듣기를 끄면 엔진은 멈추지 않고 음소거만 하며, 녹음이 끝난 뒤 멈춘다. 엔진을 시작할 수 없으면 PortAudio 경로로 자동 전환한다.
+- 라이브 모니터링은 녹음 엔진과 별도 스트림이다. 모니터링 실패·중단은 녹음과 WAV 파일에 영향을 주지 않는다. 마이크를 독점하는 WASAPI exclusive 모드는 녹음 스트림을 막으므로 쓰지 않는다.
+- 하드튠은 녹음 엔진을 거치지 않는다. 녹음은 항상 원본을 저장하고, 저장이 끝난 뒤 별도 스레드가 튠한 파일을 임시 파일로 만들어 검증한 다음 원본을 `.raw/`로 옮기고 교체한다. 실패하면 원본이 그대로 남는다. 실시간 듣기와 파일은 같은 DSP(블록 크기와 무관하게 동일 출력)라 들은 소리와 저장된 소리가 같다.
 - 공용 `utils.py`나 거대한 `constants.py`를 만들지 않는다. 기능과 상수는 책임을 가진 모듈에 둔다.
 - 새 추상 클래스나 계층은 실제 대체 구현이 필요해질 때 추가한다.
 

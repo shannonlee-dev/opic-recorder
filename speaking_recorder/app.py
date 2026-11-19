@@ -6,6 +6,7 @@ import sys
 
 from .metadata import APP_NAME
 from .ui.app import RecorderApp
+from .ui.launcher import ModeLauncher
 from .windows import enable_dpi_awareness
 
 
@@ -21,12 +22,19 @@ def main() -> int:
     root.withdraw()
     try:
         import sounddevice as sd
-
-        RecorderApp(root, sd)
     except Exception as exc:
         messagebox.showerror(APP_NAME, f"앱을 시작할 수 없습니다.\n{exc}", parent=root)
         root.destroy()
         return 1
+
+    def open_mode(mode):
+        try:
+            RecorderApp(root, sd, mode)
+        except Exception as exc:
+            messagebox.showerror(APP_NAME, f"앱을 시작할 수 없습니다.\n{exc}", parent=root)
+            root.destroy()
+
+    ModeLauncher(root, open_mode)
     root.deiconify()
     root.mainloop()
     return 0

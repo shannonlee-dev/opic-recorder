@@ -15,6 +15,8 @@ def main():
         raise RuntimeError("ASIO DLL found in release executable")
     if not any("portaudio" in name.lower() and name.endswith(".dll") for name in names):
         raise RuntimeError("PortAudio DLL missing from release executable")
+    if "native/ta_autotune.dll" not in names:
+        raise RuntimeError("Hard Tune DLL missing from release executable")
     documents = [root / "LICENSE", root / "THIRD_PARTY_NOTICES.md"]
     documents.extend(sorted((root / "licenses").glob("*.txt")))
     for document in documents:

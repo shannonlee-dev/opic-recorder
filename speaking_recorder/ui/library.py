@@ -4,7 +4,7 @@ import threading
 import tkinter as tk
 from tkinter import ttk, messagebox
 from ..library import scan_recordings
-from ..windows import play_file, stop_playback, recycle_file
+from ..windows import play_file, recycle_file, set_playback_volume, stop_playback
 
 BG = '#ffffff'
 CARD = '#f7f7f5'
@@ -74,6 +74,23 @@ class LibraryView(tk.Frame):
         self.play_button = self.button(controls, '▶  선택한 녹음 재생', self.play, ACCENT)
         self.play_button.pack(side='left', fill='x', expand=True)
         self.button(controls, '■  정지', self.stop).pack(side='right', padx=(8, 0))
+        volume_row = tk.Frame(player, bg='#f7f7f5')
+        volume_row.pack(fill='x', pady=(10, 0))
+        tk.Label(volume_row, text='볼륨', bg='#f7f7f5', fg=MUTED,
+                 font=('맑은 고딕', 9)).pack(side='left')
+        self.volume = tk.IntVar(value=100)
+        self.volume_text = tk.Label(volume_row, text='100%', width=5, anchor='e', bg='#f7f7f5',
+                                    fg=TEXT, font=('Segoe UI', 9))
+        self.volume_text.pack(side='right')
+        self.volume_scale = tk.Scale(
+            volume_row, from_=0, to=100, orient='horizontal', variable=self.volume,
+            showvalue=False, command=self.volume_changed, bg='#f7f7f5', troughcolor='#e4e3df',
+            activebackground=ACCENT, highlightthickness=0, bd=0, sliderrelief='flat',
+            sliderlength=18, width=8, cursor='hand2', takefocus=True,
+        )
+        self.volume_scale.pack(side='left', fill='x', expand=True, padx=(10, 6))
+        # Windows remembers per-app volume; start in sync with the slider.
+        self.volume_changed(self.volume.get())
         self.query.trace_add('write', self.filter_changed)
         self.date.trace_add('write', self.filter_changed)
         self.render()
@@ -219,6 +236,13 @@ class LibraryView(tk.Frame):
 
     def stop(self):
         stop_playback()
+
+    def volume_changed(self, value):
+        self.volume_text.config(text=f'{int(float(value))}%')
+        try:
+            set_playback_volume(int(float(value)) / 100)
+        except OSError:
+            self.volume_text.config(text='—')
 
     def delete(self, path):
         if not self.idle:

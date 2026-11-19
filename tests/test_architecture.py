@@ -21,7 +21,7 @@ class BlockDesktopImports(importlib.abc.MetaPathFinder):
 
 sys.meta_path.insert(0, BlockDesktopImports())
 from speaking_recorder import Recorder, RecordingResult
-from speaking_recorder import devices, settings, wav
+from speaking_recorder import devices, monitoring, settings, wav
 assert Recorder.__module__ == 'speaking_recorder.recording'
 """
         result = subprocess.run(

@@ -3,7 +3,8 @@ from PyInstaller.utils.hooks import collect_all
 
 datas = [('assets/speaking-recorder.ico', 'assets'), ('LICENSE', '.'),
          ('THIRD_PARTY_NOTICES.md', '.'), ('licenses', 'licenses')]
-binaries = []
+# Hard-tune DSP (built from ~/__dev/trap-autotune, see speaking_recorder/native/README.md).
+binaries = [('speaking_recorder/native/ta_autotune.dll', 'native')]
 hiddenimports = ['_cffi_backend']
 tmp_ret = collect_all('_sounddevice_data')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]

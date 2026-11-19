@@ -82,9 +82,11 @@ def desktop_folder() -> Path:
     return windows_folder("B4BFCC3A-DB2C-424C-B029-7FE99A87C641")
 
 
-def settings_file() -> Path:
+def settings_file(name: str = "settings.json") -> Path:
     local = windows_folder("F1B32785-6FBA-4FCF-9D55-7B8E7F157091")
-    current = local / "SpeakingRecorder" / "settings.json"
+    current = local / "SpeakingRecorder" / name
+    if name != "settings.json":
+        return current
     # Preserve the save location configured by earlier releases.
     legacy = local / "OPIcRecorder" / "settings.json"
     return legacy if not current.exists() and legacy.exists() else current
@@ -112,6 +114,14 @@ def play_file(path: Path) -> None:
     winsound.PlaySound(
         str(path), winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_NODEFAULT
     )
+
+
+def set_playback_volume(fraction: float) -> None:
+    """Set this app's wave-out volume (0.0–1.0); applies to playback in progress."""
+    level = round(max(0.0, min(1.0, fraction)) * 0xFFFF)
+    result = ctypes.WinDLL("winmm").waveOutSetVolume(None, ctypes.c_uint32(level | level << 16))
+    if result:
+        raise OSError(f"볼륨을 바꿀 수 없습니다. (MMRESULT {result})")
 
 
 def stop_playback() -> None:

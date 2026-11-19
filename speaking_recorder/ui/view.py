@@ -6,28 +6,37 @@ import sys
 from pathlib import Path
 
 from ..metadata import APP_NAME
+from ..modes import Mode
 from .library import LibraryView
+
+
+def center_window(root, width: int, height: int) -> None:
+    """Size the window and place it in the middle of the screen, above the taskbar."""
+    taskbar = round(48 * root.winfo_fpixels("1i") / 96)
+    # Never larger than the screen (high DPI scaling on a small display).
+    width = min(width, root.winfo_screenwidth() - 16)
+    height = min(height, root.winfo_screenheight() - taskbar - 16)
+    x = max(0, (root.winfo_screenwidth() - width) // 2)
+    y = max(0, (root.winfo_screenheight() - taskbar - height) // 2)
+    root.geometry(f"{width}x{height}+{x}+{y}")
+
+
+def set_app_icon(root) -> None:
+    base = Path(sys._MEIPASS) if getattr(sys, "frozen", False) else Path(__file__).resolve().parents[2]
+    icon = base / "assets" / "speaking-recorder.ico"
+    if icon.exists():
+        root.iconbitmap(default=str(icon))
 
 
 class RecorderView:
     """Own widgets and layout; delegate user actions to the controller."""
 
-    def __init__(self, root, folder: Path, actions):
+    def __init__(self, root, folder: Path, mode: Mode, actions):
         import tkinter as tk
         from tkinter import ttk
 
-        root.title(APP_NAME)
-        icon = (
-            (
-                Path(sys._MEIPASS)
-                if getattr(sys, "frozen", False)
-                else Path(__file__).resolve().parents[2]
-            )
-            / "assets"
-            / "speaking-recorder.ico"
-        )
-        if icon.exists():
-            root.iconbitmap(default=str(icon))
+        root.title(f"{APP_NAME} · {mode.label}")
+        set_app_icon(root)
         root.resizable(True, True)
         style = ttk.Style(root)
         style.theme_use("clam")
@@ -67,7 +76,7 @@ class RecorderView:
         ttk.Sizegrip(root).place(relx=1, rely=1, anchor="se")
         heading = ttk.Frame(panel)
         heading.grid(row=0, column=0, sticky="ew")
-        ttk.Label(heading, text="SPEAKING RECORDER  /  MY WORKSPACE",
+        ttk.Label(heading, text=f"SPEAKING RECORDER  /  {mode.label.upper()} MODE",
                   style="Muted.TLabel").pack(anchor="w")
         ttk.Label(heading, text="오늘의 말하기", style="Title.TLabel").pack(anchor="w", pady=(14, 0))
         ttk.Label(panel, text="생각을 말하고, 나의 목소리를 기록하세요.",
@@ -111,6 +120,10 @@ class RecorderView:
         self.file_text = tk.StringVar(value="최근 저장 파일 없음")
         self.file_label = ttk.Label(panel, textvariable=self.file_text, wraplength=420)
         self.file_label.grid(row=9, column=0, sticky="ew", pady=(18, 8))
+        self.file_label.bind(
+            "<Configure>",
+            lambda event: self.file_label.configure(wraplength=max(200, event.width)),
+        )
         self.path_text = tk.StringVar(value=f"저장 위치: {folder}")
         # 긴 리디렉션 경로도 스크롤하거나 복사할 수 있도록 읽기 전용 입력창을 쓴다.
         ttk.Entry(panel, textvariable=self.path_text, state="readonly").grid(
@@ -144,5 +157,5 @@ class RecorderView:
         root.update_idletasks()
         width = max(width * 2, root.winfo_reqwidth())
         height = max(height, root.winfo_reqheight())
-        root.geometry(f"{width}x{height}")
+        center_window(root, width, height)
         root.minsize(width, height)

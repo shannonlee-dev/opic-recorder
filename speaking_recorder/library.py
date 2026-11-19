@@ -21,6 +21,9 @@ def scan_recordings(folder: Path) -> list[Recording]:
     for path in folder.rglob('*'):
         if path.suffix.lower() != '.wav' or not path.is_file():
             continue
+        # Hidden folders (e.g. .raw originals kept under autotuned takes) are not takes.
+        if any(part.startswith('.') for part in path.relative_to(folder).parts[:-1]):
+            continue
         try:
             stat = path.stat()
             with wave.open(str(path), 'rb') as audio:
